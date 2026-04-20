@@ -120,6 +120,7 @@ interface RecruiterCandidateModalProps {
   onClose: () => void;
   onReset: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  isSaving: boolean;
 }
 
 function RecruiterCandidateModal({
@@ -127,6 +128,7 @@ function RecruiterCandidateModal({
   uploads,
   isOpen,
   isEditing,
+  isSaving,
   existingDocuments,
   existingPhotoName,
   cvInputRef,
@@ -145,6 +147,10 @@ function RecruiterCandidateModal({
   if (!isOpen) {
     return null;
   }
+
+  const savingLabel = isEditing
+    ? 'Menyimpan perubahan kandidat...'
+    : 'Menyimpan kandidat baru...';
 
   const previewDocuments = [
     ...(uploads.cv
@@ -170,7 +176,15 @@ function RecruiterCandidateModal({
   ];
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="presentation">
+    <div
+      className="modal-backdrop"
+      onClick={() => {
+        if (!isSaving) {
+          onClose();
+        }
+      }}
+      role="presentation"
+    >
       <div
         className="modal-card recruiter-modal-card"
         onClick={(event) => event.stopPropagation()}
@@ -187,12 +201,13 @@ function RecruiterCandidateModal({
                 : 'Isi profil kandidat dan unggah CV atau dokumen pendukung recruiter.'}
             </p>
           </div>
-          <button className="ghost-button" type="button" onClick={onClose}>
+          <button className="ghost-button" type="button" disabled={isSaving} onClick={onClose}>
             Tutup
           </button>
         </div>
 
         <form className="form-grid" onSubmit={onSubmit}>
+          <fieldset className="recruiter-modal-form-fields" disabled={isSaving}>
           <label className="full-width recruiter-upload-card">
             Upload Foto Kandidat
             <input
@@ -377,16 +392,21 @@ function RecruiterCandidateModal({
               )}
             </div>
           </div>
+          </fieldset>
+
+          {isSaving ? (
+            <LoadingProgress className="modal-loading-progress" label={savingLabel} />
+          ) : null}
 
           <div className="form-actions full-width">
-            <button className="ghost-button" type="button" onClick={onReset}>
+            <button className="ghost-button" type="button" disabled={isSaving} onClick={onReset}>
               Reset Form
             </button>
-            <button className="ghost-button" type="button" onClick={onClose}>
+            <button className="ghost-button" type="button" disabled={isSaving} onClick={onClose}>
               Batal
             </button>
-            <button className="primary-button" type="submit">
-              {isEditing ? 'Simpan Perubahan' : 'Simpan Kandidat'}
+            <button className="primary-button" disabled={isSaving} type="submit">
+              {isSaving ? 'Menyimpan...' : isEditing ? 'Simpan Perubahan' : 'Simpan Kandidat'}
             </button>
           </div>
         </form>
@@ -654,6 +674,7 @@ function RecruiterPage({ view }: RecruiterPageProps) {
   const [removeCandidateId, setRemoveCandidateId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingCandidate, setIsSavingCandidate] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<StageFilter>('ALL');
@@ -672,8 +693,13 @@ function RecruiterPage({ view }: RecruiterPageProps) {
     writeSalesCandidates(salesResponse.items);
   }, []);
 
-  const loadCandidates = useCallback(async () => {
-    setIsLoading(true);
+  const loadCandidates = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+
+    if (!silent) {
+      setIsLoading(true);
+    }
+
     setErrorMessage('');
 
     try {
@@ -686,7 +712,9 @@ function RecruiterPage({ view }: RecruiterPageProps) {
           : 'Gagal memuat data recruiter dari backend.'
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -865,6 +893,8 @@ function RecruiterPage({ view }: RecruiterPageProps) {
       return;
     }
 
+    setIsSavingCandidate(true);
+
     try {
       if (editingCandidate) {
         await updateRecruiterCandidate({
@@ -880,13 +910,15 @@ function RecruiterPage({ view }: RecruiterPageProps) {
         });
       }
 
-      await Promise.all([loadCandidates(), syncSalesMirror()]);
+      await Promise.all([loadCandidates({ silent: true }), syncSalesMirror()]);
       resetForm();
       closeModal();
     } catch (error) {
       window.alert(
         error instanceof Error ? error.message : 'Gagal menyimpan data kandidat recruiter.'
       );
+    } finally {
+      setIsSavingCandidate(false);
     }
   };
 
@@ -1170,6 +1202,7 @@ function RecruiterPage({ view }: RecruiterPageProps) {
         uploads={uploads}
         isOpen={isModalOpen}
         isEditing={editingCandidateId !== null}
+        isSaving={isSavingCandidate}
         existingDocuments={
           editingCandidateId
             ? candidates.find((candidate) => candidate.id === editingCandidateId)?.documents ?? []

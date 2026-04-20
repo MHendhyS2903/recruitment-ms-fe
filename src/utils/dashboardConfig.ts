@@ -11,6 +11,9 @@ export interface MenuItem {
   children?: MenuItem[];
 }
 
+/** Menu paths disembunyikan dari sidebar sementara (route tetap ada jika diakses langsung). */
+export const sidebarHiddenPaths = new Set<string>(['/pipeline', '/master-report']);
+
 export const menuItems: MenuItem[] = [
   {
     path: '/',

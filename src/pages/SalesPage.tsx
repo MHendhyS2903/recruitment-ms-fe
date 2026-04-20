@@ -130,12 +130,14 @@ interface SalesCandidateModalProps {
   onClose: () => void;
   onReset: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  isSaving: boolean;
 }
 
 function SalesCandidateModal({
   formValues,
   uploads,
   isOpen,
+  isSaving,
   existingDocuments,
   existingPhotoName,
   cvInputRef,
@@ -154,6 +156,8 @@ function SalesCandidateModal({
   if (!isOpen) {
     return null;
   }
+
+  const savingLabel = 'Menyimpan perubahan kandidat...';
 
   const previewDocuments = [
     ...(uploads.cv
@@ -179,7 +183,15 @@ function SalesCandidateModal({
   ];
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="presentation">
+    <div
+      className="modal-backdrop"
+      onClick={() => {
+        if (!isSaving) {
+          onClose();
+        }
+      }}
+      role="presentation"
+    >
       <div
         className="modal-card recruiter-modal-card"
         onClick={(event) => event.stopPropagation()}
@@ -192,12 +204,13 @@ function SalesCandidateModal({
             <h2>Edit Kandidat Sales</h2>
             <p>Perbarui profil kandidat hasil handoff recruiter sebelum diproses oleh sales.</p>
           </div>
-          <button className="ghost-button" type="button" onClick={onClose}>
+          <button className="ghost-button" type="button" disabled={isSaving} onClick={onClose}>
             Tutup
           </button>
         </div>
 
         <form className="form-grid" onSubmit={onSubmit}>
+          <fieldset className="recruiter-modal-form-fields" disabled={isSaving}>
           <label className="full-width recruiter-upload-card">
             Upload Foto Kandidat
             <input
@@ -378,16 +391,21 @@ function SalesCandidateModal({
               )}
             </div>
           </div>
+          </fieldset>
+
+          {isSaving ? (
+            <LoadingProgress className="modal-loading-progress" label={savingLabel} />
+          ) : null}
 
           <div className="form-actions full-width">
-            <button className="ghost-button" type="button" onClick={onReset}>
+            <button className="ghost-button" type="button" disabled={isSaving} onClick={onReset}>
               Reset Form
             </button>
-            <button className="ghost-button" type="button" onClick={onClose}>
+            <button className="ghost-button" type="button" disabled={isSaving} onClick={onClose}>
               Batal
             </button>
-            <button className="primary-button" type="submit">
-              Simpan Perubahan
+            <button className="primary-button" disabled={isSaving} type="submit">
+              {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
           </div>
         </form>
@@ -710,6 +728,7 @@ function SalesPage({ view }: SalesPageProps) {
   const [removeCandidateId, setRemoveCandidateId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingCandidate, setIsSavingCandidate] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [processFormValues, setProcessFormValues] =
     useState<ProcessFormState>(emptyProcessFormValues);
@@ -730,8 +749,13 @@ function SalesPage({ view }: SalesPageProps) {
     writeRecruiterCandidates(recruiterResponse.items);
   }, []);
 
-  const loadCandidates = useCallback(async () => {
-    setIsLoading(true);
+  const loadCandidates = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+
+    if (!silent) {
+      setIsLoading(true);
+    }
+
     setErrorMessage('');
 
     try {
@@ -742,7 +766,9 @@ function SalesPage({ view }: SalesPageProps) {
         error instanceof Error ? error.message : 'Gagal memuat data sales dari backend.'
       );
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -956,6 +982,8 @@ function SalesPage({ view }: SalesPageProps) {
       return;
     }
 
+    setIsSavingCandidate(true);
+
     try {
       await updateSalesCandidate({
         candidateId: editingCandidate.candidateId ?? editingCandidate.id,
@@ -963,11 +991,13 @@ function SalesPage({ view }: SalesPageProps) {
         existingDocuments: editingCandidate.documents,
         uploads,
       });
-      await Promise.all([loadCandidates(), syncRecruiterMirror()]);
+      await Promise.all([loadCandidates({ silent: true }), syncRecruiterMirror()]);
       resetForm();
       closeModal();
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Gagal menyimpan data kandidat sales.');
+    } finally {
+      setIsSavingCandidate(false);
     }
   };
 
@@ -1255,6 +1285,7 @@ function SalesPage({ view }: SalesPageProps) {
         formValues={formValues}
         uploads={uploads}
         isOpen={isModalOpen}
+        isSaving={isSavingCandidate}
         existingDocuments={
           editingCandidateId
             ? candidates.find((candidate) => candidate.id === editingCandidateId)?.documents ?? []

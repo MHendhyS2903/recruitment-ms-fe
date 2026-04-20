@@ -471,6 +471,21 @@
   margin-top: 24px;
 }
 
+.modal-loading-progress {
+  margin: 0 0 16px;
+}
+
+.recruiter-modal-form-fields {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.recruiter-modal-form-fields:disabled {
+  opacity: 0.72;
+}
+
 .login-loading-progress {
   margin: 0;
 }

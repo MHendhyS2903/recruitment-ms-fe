@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/authSlice';
-import { menuItems } from '../../utils/dashboardConfig';
+import { menuItems, sidebarHiddenPaths } from '../../utils/dashboardConfig';
 import type { MenuItem } from '../../utils/dashboardConfig';
 
 interface MenuIconProps {
@@ -147,7 +147,9 @@ function Sidebar({
       </div>
 
       <nav className="sidebar-menu" aria-label="Main navigation">
-        {menuItems.map((item) => {
+        {menuItems
+          .filter((item) => !sidebarHiddenPaths.has(item.path))
+          .map((item) => {
           const groupActive = isGroupActive(item);
 
           return (
