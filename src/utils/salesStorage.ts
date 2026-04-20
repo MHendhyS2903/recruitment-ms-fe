@@ -1,6 +1,7 @@
 import { initialSalesCandidates } from '../data/salesCandidates';
 import type { RecruiterCandidateRecord } from '../types/recruiter';
 import type { SalesCandidateRecord, SalesStage } from '../types/sales';
+import { isProductionBuild } from './isProductionBuild';
 
 export const SALES_STORAGE_KEY = 'sales-candidate-records';
 export const SALES_SEEDED_CANDIDATE_PREFIX = 'sales-seeded-';
@@ -43,22 +44,27 @@ export const normalizeSalesCandidate = (
 const isSeededSalesCandidate = (candidate: SalesCandidateRecord) =>
   candidate.id.startsWith(SALES_SEEDED_CANDIDATE_PREFIX);
 
+const seededFallback = (): SalesCandidateRecord[] =>
+  isProductionBuild()
+    ? []
+    : initialSalesCandidates.map(normalizeSalesCandidate);
+
 export const readSalesCandidates = (): SalesCandidateRecord[] => {
   if (typeof window === 'undefined') {
-    return initialSalesCandidates.map(normalizeSalesCandidate);
+    return seededFallback();
   }
 
   const rawValue = window.localStorage.getItem(SALES_STORAGE_KEY);
 
   if (!rawValue) {
-    return initialSalesCandidates.map(normalizeSalesCandidate);
+    return seededFallback();
   }
 
   try {
     const parsedValue = JSON.parse(rawValue) as SalesCandidateRecord[];
 
     if (!Array.isArray(parsedValue) || parsedValue.length === 0) {
-      return initialSalesCandidates.map(normalizeSalesCandidate);
+      return seededFallback();
     }
 
     const normalizedCandidates = parsedValue.map(normalizeSalesCandidate);
@@ -69,12 +75,16 @@ export const readSalesCandidates = (): SalesCandidateRecord[] => {
       customCandidates.length === 0 && normalizedCandidates.every(isSeededSalesCandidate);
 
     if (hasOnlySeededData) {
-      return initialSalesCandidates.map(normalizeSalesCandidate);
+      return seededFallback();
+    }
+
+    if (isProductionBuild()) {
+      return customCandidates.map(normalizeSalesCandidate);
     }
 
     return [...customCandidates, ...initialSalesCandidates].map(normalizeSalesCandidate);
   } catch {
-    return initialSalesCandidates.map(normalizeSalesCandidate);
+    return seededFallback();
   }
 };
 

@@ -7,6 +7,7 @@ import {
   masterReportSourceOptions,
   masterReportTrackingOptions,
 } from '../data/masterReportData';
+import { isProductionBuild } from '../utils/isProductionBuild';
 import type { UseMasterReportResult } from '../types/dashboard';
 import type {
   MasterReport,
@@ -26,7 +27,9 @@ const defaultMasterFilters: MasterReportFilters = {
 };
 
 export const useMasterReport = (): UseMasterReportResult => {
-  const [reports, setReports] = useState<MasterReport[]>(initialMasterReports);
+  const [reports, setReports] = useState<MasterReport[]>(() =>
+    isProductionBuild() ? [] : initialMasterReports
+  );
   const [filters, setFilters] = useState<MasterReportFilters>(defaultMasterFilters);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<MasterReportId | null>(null);

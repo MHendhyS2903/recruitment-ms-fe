@@ -1,5 +1,6 @@
 import { initialRecruiterCandidates } from '../data/recruiterCandidates';
 import type { RecruiterCandidateRecord, RecruiterStage } from '../types/recruiter';
+import { isProductionBuild } from './isProductionBuild';
 
 export const RECRUITER_STORAGE_KEY = 'recruiter-candidate-records';
 export const RECRUITER_SEEDED_CANDIDATE_PREFIX = 'candidate-seeded-';
@@ -43,22 +44,27 @@ export const normalizeRecruiterCandidate = (
 const isSeededRecruiterCandidate = (candidate: RecruiterCandidateRecord) =>
   candidate.id.startsWith(RECRUITER_SEEDED_CANDIDATE_PREFIX);
 
+const seededFallback = (): RecruiterCandidateRecord[] =>
+  isProductionBuild()
+    ? []
+    : initialRecruiterCandidates.map(normalizeRecruiterCandidate);
+
 export const readRecruiterCandidates = (): RecruiterCandidateRecord[] => {
   if (typeof window === 'undefined') {
-    return initialRecruiterCandidates.map(normalizeRecruiterCandidate);
+    return seededFallback();
   }
 
   const rawValue = window.localStorage.getItem(RECRUITER_STORAGE_KEY);
 
   if (!rawValue) {
-    return initialRecruiterCandidates.map(normalizeRecruiterCandidate);
+    return seededFallback();
   }
 
   try {
     const parsedValue = JSON.parse(rawValue) as RecruiterCandidateRecord[];
 
     if (!Array.isArray(parsedValue) || parsedValue.length === 0) {
-      return initialRecruiterCandidates.map(normalizeRecruiterCandidate);
+      return seededFallback();
     }
 
     const normalizedCandidates = parsedValue.map(normalizeRecruiterCandidate);
@@ -69,14 +75,18 @@ export const readRecruiterCandidates = (): RecruiterCandidateRecord[] => {
       customCandidates.length === 0 && normalizedCandidates.every(isSeededRecruiterCandidate);
 
     if (hasOnlySeededData) {
-      return initialRecruiterCandidates.map(normalizeRecruiterCandidate);
+      return seededFallback();
+    }
+
+    if (isProductionBuild()) {
+      return customCandidates.map(normalizeRecruiterCandidate);
     }
 
     return [...customCandidates, ...initialRecruiterCandidates].map(
       normalizeRecruiterCandidate
     );
   } catch {
-    return initialRecruiterCandidates.map(normalizeRecruiterCandidate);
+    return seededFallback();
   }
 };
 
