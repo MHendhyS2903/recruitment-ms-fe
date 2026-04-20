@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from 'react';
 import DataTable, { type DataTableColumn } from '../components/common/DataTable';
+import LoadingProgress from '../components/common/LoadingProgress';
 import PaginationControls from '../components/common/PaginationControls';
 import {
   deleteSalesCandidate,
@@ -1110,6 +1111,8 @@ function SalesPage({ view }: SalesPageProps) {
         description={pageDescription}
         action={<span className="table-count">{totalCandidates} kandidat handoff</span>}
       />
+
+      {isLoading ? <LoadingProgress label="Memuat data sales dari server..." /> : null}
 
       {errorMessage ? (
         <div className="empty-block">

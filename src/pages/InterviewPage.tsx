@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, type ChangeEvent } from 'react';
+import LoadingProgress from '../components/common/LoadingProgress';
 import PaginationControls from '../components/common/PaginationControls';
 import FilterPanel from '../components/dashboard/FilterPanel';
 import InterviewModal from '../components/dashboard/InterviewModal';
@@ -168,7 +169,9 @@ function InterviewPage({ dashboard }: InterviewPageProps) {
         onReset={resetFilters}
       />
 
-      {loading && <p className="api-feedback">Memuat data interview dari API...</p>}
+      {loading ? (
+        <LoadingProgress label="Memuat data interview dari server..." />
+      ) : null}
       {error && <p className="api-feedback api-feedback-error">{error}</p>}
 
       <InterviewTable

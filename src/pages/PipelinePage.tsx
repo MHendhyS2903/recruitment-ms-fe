@@ -1,12 +1,15 @@
+import LoadingProgress from '../components/common/LoadingProgress';
 import InfoPanel from '../components/dashboard/InfoPanel';
 import PageHeader from '../components/dashboard/PageHeader';
 import type { PipelinePageProps } from '../types/dashboard';
 
 function PipelinePage({ dashboard }: PipelinePageProps) {
-  const { summary } = dashboard;
+  const { summary, loading } = dashboard;
 
   return (
     <>
+      {loading ? <LoadingProgress label="Memuat ringkasan pipeline dari server..." /> : null}
+
       <PageHeader
         eyebrow="Pipeline Module"
         title="Candidate Pipeline"

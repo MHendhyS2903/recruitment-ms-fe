@@ -471,6 +471,10 @@
   margin-top: 24px;
 }
 
+.login-loading-progress {
+  margin: 0;
+}
+
 .login-submit-button {
   min-height: 46px;
 }
@@ -1128,6 +1132,48 @@ a:hover {
 
 .hidden-file-input {
   display: none;
+}
+
+.loading-progress {
+  margin: 0 0 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(236, 254, 255, 0.96);
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+}
+
+.loading-progress-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.loading-progress-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.12);
+  overflow: hidden;
+}
+
+.loading-progress-bar {
+  height: 100%;
+  width: 38%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0d9488, #2dd4bf, #0d9488);
+  animation: loading-progress-slide 1.15s ease-in-out infinite;
+}
+
+@keyframes loading-progress-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(320%);
+  }
 }
 
 .api-feedback {

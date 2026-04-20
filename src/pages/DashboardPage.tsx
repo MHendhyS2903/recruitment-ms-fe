@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchRecruiterCandidates, fetchSalesCandidates } from '../api/recruitmentApi';
+import LoadingProgress from '../components/common/LoadingProgress';
 import PieChart, { type PieChartSegment } from '../components/common/PieChart';
 import InfoPanel from '../components/dashboard/InfoPanel';
 import PageHeader from '../components/dashboard/PageHeader';
@@ -9,11 +10,12 @@ import { readRecruiterCandidates } from '../utils/recruiterStorage';
 import { readSalesCandidates } from '../utils/salesStorage';
 
 function DashboardPage({ dashboard }: DashboardPageProps) {
-  const { filteredInterviews, summary } = dashboard;
+  const { filteredInterviews, summary, loading: interviewsLoading } = dashboard;
   const [recruiterCandidates, setRecruiterCandidates] = useState(() =>
     readRecruiterCandidates()
   );
   const [salesCandidates, setSalesCandidates] = useState(() => readSalesCandidates());
+  const [candidatesLoading, setCandidatesLoading] = useState(true);
 
   const loadCandidateStats = useCallback(async () => {
     const [recruiterResponse, salesResponse] = await Promise.all([
@@ -30,6 +32,8 @@ function DashboardPage({ dashboard }: DashboardPageProps) {
   useEffect(() => {
     let isActive = true;
 
+    setCandidatesLoading(true);
+
     void loadCandidateStats()
       .then(({ recruiterItems, salesItems }) => {
         if (!isActive) {
@@ -41,6 +45,11 @@ function DashboardPage({ dashboard }: DashboardPageProps) {
       })
       .catch(() => {
         // Gunakan cache localStorage sebagai fallback sementara bila API belum siap.
+      })
+      .finally(() => {
+        if (isActive) {
+          setCandidatesLoading(false);
+        }
       });
 
     return () => {
@@ -156,8 +165,18 @@ function DashboardPage({ dashboard }: DashboardPageProps) {
     [salesStats]
   );
 
+  const dashboardLoading = interviewsLoading || candidatesLoading;
+  const dashboardLoadingLabel =
+    interviewsLoading && candidatesLoading
+      ? 'Memuat data interview dan ringkasan kandidat...'
+      : interviewsLoading
+        ? 'Memuat data interview...'
+        : 'Memuat ringkasan kandidat recruiter & sales...';
+
   return (
     <>
+      {dashboardLoading ? <LoadingProgress label={dashboardLoadingLabel} /> : null}
+
       <PageHeader
         eyebrow="Dashboard Rekrutmen"
         title="Tracking Dashboard"

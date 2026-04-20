@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from 'react';
 import DataTable, { type DataTableColumn } from '../components/common/DataTable';
+import LoadingProgress from '../components/common/LoadingProgress';
 import PaginationControls from '../components/common/PaginationControls';
 import {
   createRecruiterCandidate,
@@ -1034,6 +1035,8 @@ function RecruiterPage({ view }: RecruiterPageProps) {
           </div>
         }
       />
+
+      {isLoading ? <LoadingProgress label="Memuat data recruiter dari server..." /> : null}
 
       {errorMessage ? (
         <div className="empty-block">

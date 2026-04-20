@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import LoadingProgress from '../components/common/LoadingProgress';
 import type { FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -64,7 +65,7 @@ function LoginPage() {
 
       <section className="login-card" aria-labelledby="login-title">
         <div className="login-card-header">
-          <p className="eyebrow">Auth Module</p>
+          <p className="eyebrow">BRI RECRUITMENT LOGIN</p>
           <h2 id="login-title">Login</h2>
           <p>
             Gunakan email dan password dari backend auth. Token login akan
@@ -78,7 +79,7 @@ function LoginPage() {
             <input
               autoComplete="email"
               name="email"
-              placeholder="admin@company.com"
+              placeholder="admin@indocyber.com"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -98,6 +99,10 @@ function LoginPage() {
           </label>
 
           {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
+
+          {authLoading ? (
+            <LoadingProgress className="login-loading-progress" label="Memverifikasi kredensial..." />
+          ) : null}
 
           <button className="primary-button login-submit-button" disabled={authLoading} type="submit">
             {authLoading ? 'Sedang masuk...' : 'Masuk'}
