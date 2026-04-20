@@ -471,21 +471,6 @@
   margin-top: 24px;
 }
 
-.modal-loading-progress {
-  margin: 0 0 16px;
-}
-
-.recruiter-modal-form-fields {
-  border: none;
-  padding: 0;
-  margin: 0;
-  min-width: 0;
-}
-
-.recruiter-modal-form-fields:disabled {
-  opacity: 0.72;
-}
-
 .login-loading-progress {
   margin: 0;
 }
@@ -1298,7 +1283,58 @@ a:hover {
 }
 
 .recruiter-modal-card {
+  position: relative;
   width: min(980px, 100%);
+}
+
+/* Simpan kandidat: tidak mengubah flow layout (semua absolute di dalam kartu) */
+.modal-saving-progress-root {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.modal-inline-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.modal-inline-progress-bar {
+  height: 100%;
+  width: 42%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0d9488, #2dd4bf, #0d9488);
+  animation: loading-progress-slide 1.15s ease-in-out infinite;
+}
+
+.modal-saving-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgba(240, 253, 250, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.modal-saving-shade-inner {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f766e;
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 28px rgba(15, 118, 110, 0.18);
 }
 
 .recruiter-process-modal-card {

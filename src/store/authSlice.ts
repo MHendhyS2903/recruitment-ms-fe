@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
+import { withDevMinimumLoadingDuration } from '../utils/devLoadingDelay';
 import type {
   AuthSession,
   AuthUser,
@@ -155,7 +156,9 @@ export const login = createAsyncThunk<
   { rejectValue: string }
 >('auth/login', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await axiosClient.post('/auth/login', credentials);
+    const response = await withDevMinimumLoadingDuration(
+      axiosClient.post('/auth/login', credentials)
+    );
     const normalizedSession = normalizeSession(response.data);
 
     if (!normalizedSession) {

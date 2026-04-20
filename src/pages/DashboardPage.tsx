@@ -6,6 +6,7 @@ import InfoPanel from '../components/dashboard/InfoPanel';
 import PageHeader from '../components/dashboard/PageHeader';
 import SummaryCard from '../components/dashboard/SummaryCard';
 import type { DashboardPageProps } from '../types/dashboard';
+import { withDevMinimumLoadingDuration } from '../utils/devLoadingDelay';
 import { readRecruiterCandidates } from '../utils/recruiterStorage';
 import { readSalesCandidates } from '../utils/salesStorage';
 
@@ -18,15 +19,15 @@ function DashboardPage({ dashboard }: DashboardPageProps) {
   const [candidatesLoading, setCandidatesLoading] = useState(true);
 
   const loadCandidateStats = useCallback(async () => {
-    const [recruiterResponse, salesResponse] = await Promise.all([
-      fetchRecruiterCandidates('all'),
-      fetchSalesCandidates('all'),
-    ]);
-
-    return {
-      recruiterItems: recruiterResponse.items,
-      salesItems: salesResponse.items,
-    };
+    return withDevMinimumLoadingDuration(
+      Promise.all([
+        fetchRecruiterCandidates('all'),
+        fetchSalesCandidates('all'),
+      ]).then(([recruiterResponse, salesResponse]) => ({
+        recruiterItems: recruiterResponse.items,
+        salesItems: salesResponse.items,
+      }))
+    );
   }, []);
 
   useEffect(() => {

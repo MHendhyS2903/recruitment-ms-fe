@@ -10,6 +10,11 @@ import {
 } from 'react';
 import DataTable, { type DataTableColumn } from '../components/common/DataTable';
 import LoadingProgress from '../components/common/LoadingProgress';
+import {
+  withDevMinimumLoadingDuration,
+  withSaveProgressMinimum,
+  yieldToPaint,
+} from '../utils/devLoadingDelay';
 import PaginationControls from '../components/common/PaginationControls';
 import {
   createRecruiterCandidate,
@@ -148,9 +153,10 @@ function RecruiterCandidateModal({
     return null;
   }
 
-  const savingLabel = isEditing
-    ? 'Menyimpan perubahan kandidat...'
-    : 'Menyimpan kandidat baru...';
+  const saveProgressLabel = isEditing
+    ? 'Menyimpan perubahan kandidat'
+    : 'Menyimpan kandidat baru';
+  const saveProgressOverlayText = isEditing ? 'Menyimpan perubahan…' : 'Menyimpan kandidat…';
 
   const previewDocuments = [
     ...(uploads.cv
@@ -192,6 +198,22 @@ function RecruiterCandidateModal({
         aria-modal="true"
         aria-label={isEditing ? 'Edit kandidat recruiter' : 'Tambah kandidat recruiter'}
       >
+        {isSaving ? (
+          <div
+            aria-busy="true"
+            aria-label={saveProgressLabel}
+            className="modal-saving-progress-root"
+            role="status"
+          >
+            <div className="modal-inline-progress" aria-hidden="true">
+              <div className="modal-inline-progress-bar" />
+            </div>
+            <div className="modal-saving-shade" aria-hidden="true">
+              <span className="modal-saving-shade-inner">{saveProgressOverlayText}</span>
+            </div>
+          </div>
+        ) : null}
+
         <div className="panel-header modal-header">
           <div>
             <h2>{isEditing ? 'Edit Kandidat' : 'Form Input Kandidat'}</h2>
@@ -207,7 +229,6 @@ function RecruiterCandidateModal({
         </div>
 
         <form className="form-grid" onSubmit={onSubmit}>
-          <fieldset className="recruiter-modal-form-fields" disabled={isSaving}>
           <label className="full-width recruiter-upload-card">
             Upload Foto Kandidat
             <input
@@ -392,11 +413,6 @@ function RecruiterCandidateModal({
               )}
             </div>
           </div>
-          </fieldset>
-
-          {isSaving ? (
-            <LoadingProgress className="modal-loading-progress" label={savingLabel} />
-          ) : null}
 
           <div className="form-actions full-width">
             <button className="ghost-button" type="button" disabled={isSaving} onClick={onReset}>
@@ -406,7 +422,7 @@ function RecruiterCandidateModal({
               Batal
             </button>
             <button className="primary-button" disabled={isSaving} type="submit">
-              {isSaving ? 'Menyimpan...' : isEditing ? 'Simpan Perubahan' : 'Simpan Kandidat'}
+              {isEditing ? 'Simpan Perubahan' : 'Simpan Kandidat'}
             </button>
           </div>
         </form>
@@ -703,7 +719,7 @@ function RecruiterPage({ view }: RecruiterPageProps) {
     setErrorMessage('');
 
     try {
-      const response = await fetchRecruiterCandidates('all');
+      const response = await withDevMinimumLoadingDuration(fetchRecruiterCandidates('all'));
       setCandidates(response.items);
     } catch (error) {
       setErrorMessage(
@@ -896,21 +912,26 @@ function RecruiterPage({ view }: RecruiterPageProps) {
     setIsSavingCandidate(true);
 
     try {
-      if (editingCandidate) {
-        await updateRecruiterCandidate({
-          candidateId: editingCandidate.candidateId ?? editingCandidate.id,
-          candidate: formValues,
-          existingDocuments: editingCandidate.documents,
-          uploads,
-        });
-      } else {
-        await createRecruiterCandidate({
-          candidate: formValues,
-          uploads,
-        });
-      }
+      await yieldToPaint();
+      await withSaveProgressMinimum(
+        (async () => {
+          if (editingCandidate) {
+            await updateRecruiterCandidate({
+              candidateId: editingCandidate.candidateId ?? editingCandidate.id,
+              candidate: formValues,
+              existingDocuments: editingCandidate.documents,
+              uploads,
+            });
+          } else {
+            await createRecruiterCandidate({
+              candidate: formValues,
+              uploads,
+            });
+          }
 
-      await Promise.all([loadCandidates({ silent: true }), syncSalesMirror()]);
+          await Promise.all([loadCandidates({ silent: true }), syncSalesMirror()]);
+        })()
+      );
       resetForm();
       closeModal();
     } catch (error) {

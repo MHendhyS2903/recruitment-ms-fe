@@ -21,6 +21,7 @@ import type {
 } from '../types/interview';
 import type { PaginationMeta } from '../types/pagination';
 import { defaultFilters } from '../utils/dashboardConfig';
+import { withDevMinimumLoadingDuration } from '../utils/devLoadingDelay';
 
 interface InterviewsState {
   items: Interview[];
@@ -268,9 +269,11 @@ export const fetchInterviews = createAsyncThunk<
   }
 
   try {
-    const response = await axiosClient.get<ApiInterviewResponse>('/interviews', {
-      params: { page, limit },
-    });
+    const response = await withDevMinimumLoadingDuration(
+      axiosClient.get<ApiInterviewResponse>('/interviews', {
+        params: { page, limit },
+      })
+    );
 
     return normalizeInterviewResponse(response.data, page, limit);
   } catch (error) {
